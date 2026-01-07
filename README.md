@@ -1,97 +1,56 @@
-This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
+# Movie Discovery & Watchlist App
 
-# Getting Started
 
-> **Note**: Make sure you have completed the [Set Up Your Environment](https://reactnative.dev/docs/set-up-your-environment) guide before proceeding.
+### Features
+API integration — Fetches movies from OMDb API using the provided endpoint
+Movie display — FlatList shows movies with:
+Title
+Year
+Poster image
+Loading state — ActivityIndicator (Spinner) while fetching
+Error state — Error message with retry option if the API fails or returns no results
 
-## Step 1: Start Metro
+1. Dedicated "Add to Watchlist" button
+Each movie card has a button that says "Add to Watchlist" or "Remove from Watchlist"
+Button styling indicates the current state (blue for add, red for remove)
+Badge shows "✓ Saved" for movies in the watchlist
+2. Separate Watchlist screen
+Created WatchlistScreen.tsx showing all saved movies
+Pull-to-refresh support
+Empty state message when the watchlist is empty
+Movies can be removed from this screen
+3. Tab navigation
+Bottom tab navigation with two tabs:
+Movies tab: Browse and add movies
+Watchlist tab: View saved movies
+Navigation implemented using React Navigation
+4. AsyncStorage persistence
+Watchlist data is saved using AsyncStorage
+Automatically persists across app restarts
+Watchlist loads when the app reopens
+5. Screen synchronization
+Watchlist screen reloads when you navigate to it
+Movies screen updates watchlist status when you return to it
+Changes in one screen reflect in the other
 
-First, you will need to run **Metro**, the JavaScript build tool for React Native.
+Testing persistence
+To verify persistence:
+Add movies to your watchlist
+Close the app completely (kill the process)
+Reopen the app
+Navigate to the Watchlist tab
+Your saved movies should still be there
+The watchlist persists using AsyncStorage, so it survives app restarts and device reboots (until the app is uninstalled or data is cleared).
 
-To start the Metro dev server, run the following command from the root of your React Native project:
 
-```sh
-# Using npm
-npm start
 
-# OR using Yarn
-yarn start
-```
+## Build and run your app
 
-## Step 2: Build and run your app
-
-With Metro running, open a new terminal window/pane from the root of your React Native project, and use one of the following commands to build and run your Android or iOS app:
-
-### Android
-
-```sh
-# Using npm
-npm run android
-
-# OR using Yarn
-yarn android
-```
-
-### iOS
-
-For iOS, remember to install CocoaPods dependencies (this only needs to be run on first clone or after updating native deps).
-
-The first time you create a new project, run the Ruby bundler to install CocoaPods itself:
-
-```sh
-bundle install
-```
-
-Then, and every time you update your native dependencies, run:
-
-```sh
-bundle exec pod install
-```
-
-For more information, please visit [CocoaPods Getting Started guide](https://guides.cocoapods.org/using/getting-started.html).
+### This project was Setup and developed manually with React Native CLI not Expo
 
 ```sh
 # Using npm
-npm run ios
-
-# OR using Yarn
-yarn ios
+npx react-native run-ios
+npx react-native run-android
 ```
 
-If everything is set up correctly, you should see your new app running in the Android Emulator, iOS Simulator, or your connected device.
-
-This is one way to run your app — you can also build it directly from Android Studio or Xcode.
-
-## Step 3: Modify your app
-
-Now that you have successfully run the app, let's make changes!
-
-Open `App.tsx` in your text editor of choice and make some changes. When you save, your app will automatically update and reflect these changes — this is powered by [Fast Refresh](https://reactnative.dev/docs/fast-refresh).
-
-When you want to forcefully reload, for example to reset the state of your app, you can perform a full reload:
-
-- **Android**: Press the <kbd>R</kbd> key twice or select **"Reload"** from the **Dev Menu**, accessed via <kbd>Ctrl</kbd> + <kbd>M</kbd> (Windows/Linux) or <kbd>Cmd ⌘</kbd> + <kbd>M</kbd> (macOS).
-- **iOS**: Press <kbd>R</kbd> in iOS Simulator.
-
-## Congratulations! :tada:
-
-You've successfully run and modified your React Native App. :partying_face:
-
-### Now what?
-
-- If you want to add this new React Native code to an existing application, check out the [Integration guide](https://reactnative.dev/docs/integration-with-existing-apps).
-- If you're curious to learn more about React Native, check out the [docs](https://reactnative.dev/docs/getting-started).
-
-# Troubleshooting
-
-If you're having issues getting the above steps to work, see the [Troubleshooting](https://reactnative.dev/docs/troubleshooting) page.
-
-# Learn More
-
-To learn more about React Native, take a look at the following resources:
-
-- [React Native Website](https://reactnative.dev) - learn more about React Native.
-- [Getting Started](https://reactnative.dev/docs/environment-setup) - an **overview** of React Native and how setup your environment.
-- [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
-- [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
-- [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.
