@@ -11,7 +11,6 @@ Loading state — ActivityIndicator (Spinner) while fetching
 Error state — Error message with retry option if the API fails or returns no results
 
 1. Dedicated button shows "Save" or "Remove" with heart icon
-Each movie card has a button that says "Add to Watchlist" or "Remove from Watchlist"
 Button styling indicates the current state (blue for add, red for remove)
 Badge shows "✓ Saved" for movies in the watchlist
 2. Separate Watchlist screen
