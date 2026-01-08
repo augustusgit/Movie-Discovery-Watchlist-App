@@ -1,12 +1,12 @@
-import React from 'react';
+import React, { memo } from 'react';
 import {
   View,
   Text,
   Image,
-  StyleSheet,
   TouchableOpacity,
 } from 'react-native';
 import { Movie } from '../types';
+import { HeartIcon } from './HeartIcon';
 
 interface MovieCardProps {
   movie: Movie;
@@ -15,113 +15,60 @@ interface MovieCardProps {
   showWatchlistButton?: boolean;
 }
 
-export const MovieCard: React.FC<MovieCardProps> = ({ 
+export const MovieCard: React.FC<MovieCardProps> = memo(({ 
   movie, 
   onWatchlistPress, 
   inWatchlist = false,
   showWatchlistButton = true,
 }) => {
   return (
-    <View style={styles.card}>
-      <View style={styles.posterContainer}>
+    <View className="flex-row bg-white mx-4 my-2 rounded-lg shadow-md overflow-hidden">
+      <View className="relative">
         <Image
           source={{ uri: movie.Poster !== 'N/A' ? movie.Poster : 'https://via.placeholder.com/300x450?text=No+Poster' }}
-          style={styles.poster}
+          className="w-24 h-36 bg-gray-100"
           resizeMode="cover"
         />
         {inWatchlist && (
-          <View style={styles.watchlistBadge}>
-            <Text style={styles.watchlistText}>✓ Saved</Text>
+          <View className="absolute top-2 right-2 bg-green-500 px-1.5 py-1 rounded">
+            <Text className="text-white text-xs font-semibold">✓ Saved</Text>
           </View>
         )}
       </View>
-      <View style={styles.info}>
-        <Text style={styles.title} numberOfLines={2}>
-          {movie.Title}
-        </Text>
-        <Text style={styles.year}>{movie.Year}</Text>
+      <View className="flex-1 p-3 justify-between">
+        <View>
+          <Text className="text-base font-semibold text-gray-800 mb-1" numberOfLines={2}>
+            {movie.Title}
+          </Text>
+          <Text className="text-sm text-gray-600 mb-2">{movie.Year}</Text>
+        </View>
         {showWatchlistButton && (
           <TouchableOpacity
-            style={[styles.button, inWatchlist && styles.removeButton]}
+            className={`flex-row items-center justify-center py-2 px-3 rounded-lg mt-1 ${
+              inWatchlist ? 'bg-red-500' : 'bg-blue-500'
+            }`}
             onPress={onWatchlistPress}
             activeOpacity={0.7}
           >
-            <Text style={styles.buttonText}>
-              {inWatchlist ? 'Remove from Watchlist' : 'Add to Watchlist'}
+            <HeartIcon filled={inWatchlist} size={18} color="#ffffff" />
+            <Text className="text-white text-sm font-semibold ml-2">
+              {inWatchlist ? 'Remove' : 'Save'}
             </Text>
           </TouchableOpacity>
         )}
       </View>
     </View>
   );
-};
-
-const styles = StyleSheet.create({
-  card: {
-    flexDirection: 'row',
-    backgroundColor: '#fff',
-    marginHorizontal: 16,
-    marginVertical: 8,
-    borderRadius: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-    overflow: 'hidden',
-  },
-  posterContainer: {
-    position: 'relative',
-  },
-  poster: {
-    width: 100,
-    height: 150,
-    backgroundColor: '#f0f0f0',
-  },
-  watchlistBadge: {
-    position: 'absolute',
-    top: 8,
-    right: 8,
-    backgroundColor: '#4CAF50',
-    paddingHorizontal: 6,
-    paddingVertical: 4,
-    borderRadius: 4,
-  },
-  watchlistText: {
-    color: '#fff',
-    fontSize: 10,
-    fontWeight: '600',
-  },
-  info: {
-    flex: 1,
-    padding: 12,
-    justifyContent: 'space-between',
-  },
-  title: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 4,
-  },
-  year: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 8,
-  },
-  button: {
-    backgroundColor: '#007AFF',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 6,
-    alignItems: 'center',
-    marginTop: 4,
-  },
-  removeButton: {
-    backgroundColor: '#d32f2f',
-  },
-  buttonText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '600',
-  },
+}, (prevProps, nextProps) => {
+  // Custom comparison function for memo
+  return (
+    prevProps.movie.imdbID === nextProps.movie.imdbID &&
+    prevProps.inWatchlist === nextProps.inWatchlist &&
+    prevProps.showWatchlistButton === nextProps.showWatchlistButton &&
+    prevProps.movie.Title === nextProps.movie.Title &&
+    prevProps.movie.Year === nextProps.movie.Year &&
+    prevProps.movie.Poster === nextProps.movie.Poster
+  );
 });
+
+MovieCard.displayName = 'MovieCard';

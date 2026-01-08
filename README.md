@@ -10,7 +10,7 @@ Poster image
 Loading state — ActivityIndicator (Spinner) while fetching
 Error state — Error message with retry option if the API fails or returns no results
 
-1. Dedicated "Add to Watchlist" button
+1. Dedicated button shows "Save" or "Remove" with heart icon
 Each movie card has a button that says "Add to Watchlist" or "Remove from Watchlist"
 Button styling indicates the current state (blue for add, red for remove)
 Badge shows "✓ Saved" for movies in the watchlist
@@ -41,6 +41,25 @@ Reopen the app
 Navigate to the Watchlist tab
 Your saved movies should still be there
 The watchlist persists using AsyncStorage, so it survives app restarts and device reboots (until the app is uninstalled or data is cleared).
+
+Unique
+- Pull-to-refresh
+Swipe down on the movie list to refresh
+Visual feedback during refresh
+- Empty states
+Watchlist: improved design with tips
+Search: helpful message when no results
+- Performance
+React.memo prevents unnecessary component re-renders
+useMemo memoizes expensive computations and JSX
+useCallback memoizes event handlers
+Optimized FlatList rendering
+- Search
+Search bar at the top of Movie Search screen
+Real-time search with debouncing
+Search any movie title (not just "Marvel")
+Smooth transitions between search results
+The app is optimized and provides a smooth user experience.
 
 
 

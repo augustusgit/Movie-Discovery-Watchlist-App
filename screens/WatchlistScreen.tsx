@@ -1,10 +1,9 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, memo } from 'react';
 import {
   View,
   Text,
   FlatList,
   ActivityIndicator,
-  StyleSheet,
   Alert,
   RefreshControl,
 } from 'react-native';
@@ -47,7 +46,7 @@ export const WatchlistScreen: React.FC = () => {
     loadWatchlist();
   }, []);
 
-  const handleRemoveFromWatchlist = async (movie: Movie) => {
+  const handleRemoveFromWatchlist = useCallback(async (movie: Movie) => {
     try {
       await removeFromWatchlist(movie.imdbID);
       setWatchlist(prev => prev.filter(m => m.imdbID !== movie.imdbID));
@@ -55,9 +54,10 @@ export const WatchlistScreen: React.FC = () => {
     } catch (err) {
       Alert.alert('Error', 'Failed to remove from watchlist');
     }
-  };
+  }, []);
 
-  const renderMovie = ({ item }: { item: Movie }) => {
+  // Memoize renderMovie to prevent unnecessary re-renders
+  const renderMovie = useCallback(({ item }: { item: Movie }) => {
     return (
       <MovieCard
         movie={item}
@@ -66,36 +66,52 @@ export const WatchlistScreen: React.FC = () => {
         showWatchlistButton={true}
       />
     );
-  };
+  }, [handleRemoveFromWatchlist]);
+
+  // Memoize keyExtractor
+  const keyExtractor = useCallback((item: Movie) => item.imdbID, []);
+
+  // Memoize empty state component
+  const renderEmptyState = useMemo(() => (
+    <View className="flex-1 justify-center items-center p-5 bg-gray-50">
+      <View className="items-center mb-6">
+        <Text className="text-6xl mb-4">⭐</Text>
+        <Text className="text-2xl font-bold text-gray-800 mb-2 text-center">
+          No movies saved yet!
+        </Text>
+        <Text className="text-base text-gray-600 text-center px-8">
+          Start exploring and save your favorite movies to your watchlist
+        </Text>
+      </View>
+      <View className="bg-blue-50 border border-blue-200 rounded-lg p-4 mx-8">
+        <Text className="text-sm text-blue-800 text-center">
+          💡 Tip: Use the search bar in the Movies tab to find movies you want to watch
+        </Text>
+      </View>
+    </View>
+  ), []);
 
   if (loading) {
     return (
-      <View style={styles.centerContainer}>
+      <View className="flex-1 justify-center items-center p-5 bg-gray-50">
         <ActivityIndicator size="large" color="#007AFF" />
-        <Text style={styles.loadingText}>Loading watchlist...</Text>
+        <Text className="mt-3 text-base text-gray-600">Loading watchlist...</Text>
       </View>
     );
   }
 
   if (watchlist.length === 0) {
-    return (
-      <View style={styles.centerContainer}>
-        <Text style={styles.emptyText}>Your watchlist is empty</Text>
-        <Text style={styles.emptySubtext}>
-          Add movies from the Movies tab to see them here
-        </Text>
-      </View>
-    );
+    return renderEmptyState;
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.header}>My Watchlist</Text>
+    <View className="flex-1 bg-gray-50">
+      <Text className="text-2xl font-bold p-4 bg-white text-gray-800">My Watchlist</Text>
       <FlatList
         data={watchlist}
         renderItem={renderMovie}
-        keyExtractor={item => item.imdbID}
-        contentContainerStyle={styles.list}
+        keyExtractor={keyExtractor}
+        contentContainerStyle={{ paddingVertical: 8 }}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
@@ -103,43 +119,3 @@ export const WatchlistScreen: React.FC = () => {
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f5f5f5',
-  },
-  header: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    padding: 16,
-    backgroundColor: '#fff',
-    color: '#333',
-  },
-  list: {
-    paddingVertical: 8,
-  },
-  centerContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  loadingText: {
-    marginTop: 12,
-    fontSize: 16,
-    color: '#666',
-  },
-  emptyText: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-  emptySubtext: {
-    fontSize: 14,
-    color: '#666',
-    textAlign: 'center',
-  },
-});

@@ -1,11 +1,13 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
   View,
   Text,
   FlatList,
   ActivityIndicator,
-  StyleSheet,
   Alert,
+  TextInput,
+  RefreshControl,
+  TouchableOpacity,
 } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
@@ -21,12 +23,16 @@ export const MovieListScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
   const [movies, setMovies] = useState<Movie[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [refreshing, setRefreshing] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [watchlistIds, setWatchlistIds] = useState<Set<string>>(new Set());
+  const [searchQuery, setSearchQuery] = useState<string>('Marvel');
+  const [searchInput, setSearchInput] = useState<string>('Marvel');
+  const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    loadMovies();
-  }, []);
+    loadMovies(searchQuery);
+  }, [searchQuery]);
 
   // Refresh watchlist status when screen comes into focus
   useFocusEffect(
@@ -37,11 +43,20 @@ export const MovieListScreen: React.FC = () => {
     }, [movies])
   );
 
-  const loadMovies = async () => {
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  const loadMovies = useCallback(async (searchTerm: string = 'Marvel') => {
     try {
       setLoading(true);
       setError(null);
-      const response = await fetchMovies('Marvel');
+      const response = await fetchMovies(searchTerm);
       const movieList = response.Search || [];
       setMovies(movieList);
       
@@ -53,10 +68,31 @@ export const MovieListScreen: React.FC = () => {
       setError(err instanceof Error ? err.message : 'Failed to fetch movies');
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
-  };
+  }, []);
 
-  const loadWatchlistStatus = async (movieList: Movie[]) => {
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    loadMovies(searchQuery);
+  }, [searchQuery, loadMovies]);
+
+  const handleSearch = useCallback((text: string) => {
+    setSearchInput(text);
+    
+    // Clear existing timeout
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+    
+    // Debounce search - wait 500ms after user stops typing
+    searchTimeoutRef.current = setTimeout(() => {
+      const trimmedQuery = text.trim() || 'Marvel';
+      setSearchQuery(trimmedQuery);
+    }, 500);
+  }, []);
+
+  const loadWatchlistStatus = useCallback(async (movieList: Movie[]) => {
     const ids = new Set<string>();
     for (const movie of movieList) {
       const inWatchlist = await isInWatchlist(movie.imdbID);
@@ -65,9 +101,9 @@ export const MovieListScreen: React.FC = () => {
       }
     }
     setWatchlistIds(ids);
-  };
+  }, []);
 
-  const handleMoviePress = async (movie: Movie) => {
+  const handleMoviePress = useCallback(async (movie: Movie) => {
     const inWatchlist = watchlistIds.has(movie.imdbID);
     
     try {
@@ -101,9 +137,10 @@ export const MovieListScreen: React.FC = () => {
     } catch (err) {
       Alert.alert('Error', 'Failed to update watchlist');
     }
-  };
+  }, [watchlistIds, navigation]);
 
-  const renderMovie = ({ item }: { item: Movie }) => {
+  // Memoize renderMovie to prevent unnecessary re-renders
+  const renderMovie = useCallback(({ item }: { item: Movie }) => {
     const inWatchlist = watchlistIds.has(item.imdbID);
     
     return (
@@ -114,87 +151,87 @@ export const MovieListScreen: React.FC = () => {
         showWatchlistButton={true}
       />
     );
-  };
+  }, [watchlistIds, handleMoviePress]);
 
-  if (loading) {
-    return (
-      <View style={styles.centerContainer}>
-        <ActivityIndicator size="large" color="#007AFF" />
-        <Text style={styles.loadingText}>Loading movies...</Text>
-      </View>
-    );
-  }
+  // Memoize keyExtractor
+  const keyExtractor = useCallback((item: Movie) => item.imdbID, []);
 
-  if (error) {
-    return (
-      <View style={styles.centerContainer}>
-        <Text style={styles.errorText}>Error: {error}</Text>
-        <Text style={styles.retryText} onPress={loadMovies}>
-          Tap to retry
-        </Text>
-      </View>
-    );
-  }
+  // Memoize empty state components
+  const renderLoadingState = useMemo(() => (
+    <View className="flex-1 justify-center items-center p-5 bg-gray-50">
+      <ActivityIndicator size="large" color="#007AFF" />
+      <Text className="mt-3 text-base text-gray-600">Loading movies...</Text>
+    </View>
+  ), []);
 
-  if (movies.length === 0) {
-    return (
-      <View style={styles.centerContainer}>
-        <Text style={styles.errorText}>No movies found</Text>
-        <Text style={styles.retryText} onPress={loadMovies}>
-          Tap to retry
-        </Text>
-      </View>
-    );
+  const renderErrorState = useMemo(() => (
+    <View className="flex-1 justify-center items-center p-5 bg-gray-50">
+      <Text className="text-base text-red-600 text-center mb-3">Error: {error}</Text>
+      <TouchableOpacity onPress={() => loadMovies(searchQuery)}>
+        <Text className="text-sm text-blue-500 underline">Tap to retry</Text>
+      </TouchableOpacity>
+    </View>
+  ), [error, searchQuery, loadMovies]);
+
+  const renderEmptyState = useMemo(() => (
+    <View className="flex-1 justify-center items-center p-5 bg-gray-50">
+      <Text className="text-xl font-semibold text-gray-800 mb-2 text-center">
+        No movies found
+      </Text>
+      <Text className="text-sm text-gray-600 text-center mb-4">
+        Try searching for a different movie title
+      </Text>
+      <TouchableOpacity 
+        onPress={() => loadMovies(searchQuery)}
+        className="bg-blue-500 px-4 py-2 rounded-lg"
+      >
+        <Text className="text-white font-semibold">Retry</Text>
+      </TouchableOpacity>
+    </View>
+  ), [searchQuery, loadMovies]);
+
+  if (loading && !refreshing) {
+    return renderLoadingState;
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.header}>Movie Search</Text>
-      <FlatList
-        data={movies}
-        renderItem={renderMovie}
-        keyExtractor={item => item.imdbID}
-        contentContainerStyle={styles.list}
-      />
+    <View className="flex-1 bg-gray-50">
+      <View className="bg-white">
+        <Text className="text-2xl font-bold p-4 text-gray-800">Movie Search</Text>
+        <View className="px-4 pb-4">
+          <View className="flex-row items-center bg-gray-100 rounded-lg px-3 py-2">
+            <Text className="text-gray-500 mr-2">🔍</Text>
+            <TextInput
+              className="flex-1 text-base text-gray-800"
+              placeholder="Search for movies..."
+              placeholderTextColor="#9ca3af"
+              value={searchInput}
+              onChangeText={handleSearch}
+              returnKeyType="search"
+              onSubmitEditing={() => {
+                const trimmedQuery = searchInput.trim() || 'Marvel';
+                setSearchQuery(trimmedQuery);
+              }}
+            />
+          </View>
+        </View>
+      </View>
+      
+      {error ? (
+        renderErrorState
+      ) : movies.length === 0 ? (
+        renderEmptyState
+      ) : (
+        <FlatList
+          data={movies}
+          renderItem={renderMovie}
+          keyExtractor={keyExtractor}
+          contentContainerStyle={{ paddingVertical: 8 }}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
+        />
+      )}
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f5f5f5',
-  },
-  header: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    padding: 16,
-    backgroundColor: '#fff',
-    color: '#333',
-  },
-  list: {
-    paddingVertical: 8,
-  },
-  centerContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  loadingText: {
-    marginTop: 12,
-    fontSize: 16,
-    color: '#666',
-  },
-  errorText: {
-    fontSize: 16,
-    color: '#d32f2f',
-    textAlign: 'center',
-    marginBottom: 12,
-  },
-  retryText: {
-    fontSize: 14,
-    color: '#007AFF',
-    textDecorationLine: 'underline',
-  },
-});

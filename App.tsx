@@ -23,8 +23,8 @@ const TabIcon: React.FC<{ label: string; focused: boolean }> = ({ label, focused
   };
   
   return (
-    <View style={{ alignItems: 'center', justifyContent: 'center' }}>
-      <Text style={{ fontSize: 20 }}>{iconMap[label] || '•'}</Text>
+    <View className="items-center justify-center">
+      <Text className="text-xl">{iconMap[label] || '•'}</Text>
     </View>
   );
 };
@@ -35,7 +35,7 @@ function App() {
   return (
     <SafeAreaProvider>
       <NavigationContainer>
-        <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
+      <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
         <Tab.Navigator
           screenOptions={{
             headerShown: false,
